@@ -21,8 +21,8 @@ int s1Status = HIGH;
 int s2Status = HIGH;
 
 // UDP settings
-IPAddress receiverESP32IP(192, 168, 1, 53); // IP address of the receiver ESP32 G5_Servos
-IPAddress receiverComputerIP(192, 168, 1, 55); // IP address of your PC5-computer
+IPAddress receiverESP32IP(192, 168, 1, 43); // IP address of the receiver ESP32 G5_Servos
+IPAddress receiverComputerIP(192, 168, 1, 45); // IP address of your PC5-computer
 const int udpPort = 12345;
 WiFiUDP udp;
 

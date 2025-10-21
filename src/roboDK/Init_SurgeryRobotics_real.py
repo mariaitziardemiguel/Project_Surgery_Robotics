@@ -27,7 +27,7 @@ Servo_torques = None
 data_lock = threading.Lock()# semaphor to manage data from 2 threads
 
 # Robot Constants setup
-ROBOT_IP = '192.168.1.5'
+ROBOT_IP = '192.168.1.4'
 ROBOT_PORT = 30002 # Default port for UR robots
 accel_mss = 1.2
 speed_ms = 0.75
@@ -104,10 +104,10 @@ def read_data_UDP():
             try:
                 received_data = json.loads(data.decode())
                 device_id = received_data.get("device")
-                if device_id == "G5_Endo":
+                if device_id == "G4_Endo":
                     with data_lock:
                         Endowrist_rpy = received_data
-                elif device_id == "G5_Gri":
+                elif device_id == "G4_Gri":
                     with data_lock:
                         Gripper_rpy = received_data
             except json.JSONDecodeError:

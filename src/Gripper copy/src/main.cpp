@@ -55,6 +55,16 @@ void updateOrientation() {
   s2Status = digitalRead(PIN_S2);
 }
 
+void receiveTorquesUDP() {
+  // Vibration motor control based on torque values
+  float totalTorque = Torque_roll1 + Torque_pitch + Torque_yaw;
+  // Convert torque to PWM value (0-255)
+  int vibrationValue = constrain(totalTorque * 2.5, 0, 255); // Adjust the scaling factor as needed
+  ledcWrite(0, vibrationValue); // Set the PWM value for the vibration motor
+  Serial.print("Vibration motor value: ");
+  Serial.println(vibrationValue);
+}
+
 void sendOrientationUDP() {
   JsonDocument doc;
   doc["device"] = deviceId;
@@ -98,10 +108,15 @@ void setup() {
 
   pinMode(PIN_S1, INPUT);
   pinMode(PIN_S2, INPUT);
+
+  // Configure PWM for the vibration motor (channel 0)
+  ledcSetup(0, 5000, 8); // Channel 0, frequency 5kHz, resolution 8 bits
+  ledcAttachPin(vibrationPin, 0); // Attach the vibration motor to channel 0
 }
 
 void loop() {
   updateOrientation();
   sendOrientationUDP();
   delay(10);
+  receiveTorquesUDP();
 }
