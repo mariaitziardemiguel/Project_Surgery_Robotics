@@ -20,6 +20,9 @@ const int PIN_S2 = 27;
 int s1Status = HIGH;
 int s2Status = HIGH;
 
+// Torque threshold for vibration
+const float TORQUE_THRESHOLD = 5.0;
+
 // UDP settings
 IPAddress receiverESP32IP(192, 168, 1, 43); // IP of receiver ESP32
 IPAddress receiverComputerIP(192, 168, 1, 45); // IP of PC
@@ -56,13 +59,35 @@ void updateOrientation() {
 }
 
 void receiveTorquesUDP() {
-  // Vibration motor control based on torque values
-  float totalTorque = Torque_roll1 + Torque_pitch + Torque_yaw;
-  // Convert torque to PWM value (0-255)
-  int vibrationValue = constrain(totalTorque * 2.5, 0, 255); // Adjust the scaling factor as needed
-  ledcWrite(0, vibrationValue); // Set the PWM value for the vibration motor
-  Serial.print("Vibration motor value: ");
-  Serial.println(vibrationValue);
+  int packetSize = udp.parsePacket();
+  if (packetSize) {
+    char packetBuffer[512];
+    int len = udp.read(packetBuffer, 512);
+    if (len > 0) {
+      packetBuffer[len] = '\0';
+      Serial.print("Received torque data: ");
+      Serial.println(packetBuffer);
+
+      // Parse JSON
+      StaticJsonDocument<256> doc;
+      DeserializationError error = deserializeJson(doc, packetBuffer);
+      if (!error) {
+        float Torque_roll1 = doc["Torque_roll1"];
+        float Torque_pitch = doc["Torque_pitch"];
+        float Torque_yaw = doc["Torque_yaw"];
+
+        float totalTorque = Torque_roll1 + Torque_pitch + Torque_yaw;
+        Serial.print("Total torque: "); Serial.println(totalTorque);
+
+        // Vibrate if torque exceeds threshold
+        if (totalTorque > TORQUE_THRESHOLD) {
+          ledcWrite(0, 255); // Full vibration
+        } else {
+          ledcWrite(0, 0);   // Stop vibration
+        }
+      }
+    }
+  }
 }
 
 void sendOrientationUDP() {
