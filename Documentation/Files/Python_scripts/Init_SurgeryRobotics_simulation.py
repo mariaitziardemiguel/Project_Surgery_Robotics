@@ -15,6 +15,8 @@ ROBOT_NAME = 'UR5e'
 ZERO_YAW_TOOL = 0
 ZERO_YAW_GRIPPER = 0
 READ_INTERVAL_S = 0.01
+TORQUE_THRESHOLD = 5.0
+
 
 Endowrist_rpy = None
 Gripper_rpy = None
@@ -67,10 +69,10 @@ def read_data_UDP():
             try:
                 received_data = json.loads(data.decode())
                 device_id = received_data.get("device")
-                if device_id == "G5_Endo":
+                if device_id == "G4_Endo":
                     with data_lock:
                         Endowrist_rpy = received_data
-                elif device_id == "G5_Gri":
+                elif device_id == "G4_Gri":
                     with data_lock:
                         Gripper_rpy = received_data
             except json.JSONDecodeError:
@@ -152,7 +154,11 @@ def move_robot(robot, gripper, needle, text_label):
                 needle.setParent(gripper)
                 needle.setPose(TxyzRxyz_2_Pose([0, 0, 0, 0, 0, 0]))
                 status_message = "🔵 S2 premut: agulla agafada"
-                     
+            torque_total = current_Gripper_rpy.get("Torque_roll1",0) + current_Gripper_rpy.get("Torque_pitch",0) + current_Gripper_rpy.get("Torque_yaw",0)
+            servo_torques_msg = f"Torque total: {torque_total:.2f}"
+
+            if torque_total > TORQUE_THRESHOLD:
+                status_message += " ⚠️ Torque alto!"
         # Update the label with the latest values
         update_text_label(text_label, endowrist_orientation_msg, gripper_orientation_msg, status_message, servo_torques_msg)
 

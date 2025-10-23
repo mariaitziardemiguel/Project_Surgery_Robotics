@@ -3,6 +3,7 @@
 #include "MPU9250.h"
 #include <Wire.h> // Needed for I2C to read IMU
 #include <ArduinoJson.h> // Compatible amb versió 7.4.2
+#include <IMU_RoboticsUB.h>   // Nom de la llibreria custom
 
 // Device ID
 const char *deviceId = "G4_Gri";
@@ -29,8 +30,9 @@ IPAddress receiverComputerIP(192, 168, 1, 45); // IP of PC
 const int udpPort = 12345;
 WiFiUDP udp;
 
-// MPU-9250 object
-MPU9250 mpu;
+// IMU object
+IMU imu;
+
 
 // Orientation data
 float Gri_roll = 0.0, Gri_pitch = 0.0, Gri_yaw = 0.0;
@@ -49,11 +51,13 @@ void connectToWiFi() {
 }
 
 void updateOrientation() {
-  if (mpu.update()) {
-    Gri_yaw = -mpu.getYaw();
-    Gri_pitch = -mpu.getPitch();
-    Gri_roll = mpu.getRoll();
-  }
+  // Llegeix FIFO del DMP i actualitza càlculs interns
+  imu.ReadSensor();
+   // Obté els angles (roll, pitch, yaw) via GetRPW()
+  float* rpw = imu.GetRPW();
+  Gri_roll  = rpw[2];
+  Gri_pitch = rpw[1];
+  Gri_yaw   = rpw[0];
   s1Status = digitalRead(PIN_S1);
   s2Status = digitalRead(PIN_S2);
 }
@@ -118,14 +122,8 @@ void setup() {
   Wire.begin();
   delay(2000);
 
-  if (!mpu.setup(0x68)) {
-    while (1) {
-      Serial.println("MPU connection failed.");
-      delay(5000);
-    }
-  }
-  Serial.println("MPU connected");
-  delay(2000);
+  // Inicialitza IMU (amb DMP)
+  imu.Install();
 
   connectToWiFi();
   udp.begin(udpPort);

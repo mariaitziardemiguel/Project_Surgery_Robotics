@@ -169,8 +169,24 @@ void setup() {
   servo_roll2.write(90);
 }
 
+void sendTorquesUDP() {
+  JsonDocument doc;
+  doc["device"] = "G4_Servos";
+  doc["Torque_roll1"] = Torque_roll1;
+  doc["Torque_pitch"] = Torque_pitch;
+  doc["Torque_yaw"] = Torque_yaw;
+
+  char jsonBuffer[256];
+  serializeJson(doc, jsonBuffer);
+
+  udp.beginPacket(receiverESP32IP, udpPort);
+  udp.write((const uint8_t*)jsonBuffer, strlen(jsonBuffer));
+  udp.endPacket();
+}
+
 void loop() {
   receiveOrientationUDP();
   moveServos();
+  sendTorquesUDP();
   delay(10);
 }
